@@ -18,9 +18,10 @@ RSpec.describe 'Notes API', type: :request do
   end
 
   describe 'GET /notes/:id' do
-    before { get "notes/#{note_id}" }
 
     context 'when the note exists' do
+      before { get "/notes/#{note_id}" }
+
       it 'returns the note' do
         json = JSON.parse(response.body)
         expect(json).not_to be_empty
@@ -33,10 +34,8 @@ RSpec.describe 'Notes API', type: :request do
     end
 
     context 'when the note does not exist' do
-      let(:note_id) { 99999 }
-
       it 'returns status code 404' do
-        expect(response).to have_http_status(404)
+        expect { get '/notes/9999' }.to raise_error(ActiveRecord::RecordNotFound)
       end
     end
   end
@@ -51,8 +50,8 @@ RSpec.describe 'Notes API', type: :request do
 
       it 'creates a note' do
         json = JSON.parse(response.body)
-        expect(json['title']).to eq(valid_params['title'])
-        expect(json['body']).to eq(valid_params['body'])
+        expect(json['title']).to eq(valid_params[:note][:title])
+        expect(json['body']).to eq(valid_params[:note][:body])
       end
 
       it 'returns status code 201' do
@@ -61,7 +60,7 @@ RSpec.describe 'Notes API', type: :request do
     end
 
     context 'when request is invalid' do
-      before { post '/notes', params: { title: 'bad note' } }
+      before { post '/notes', params: { note: { title: 'bad note' } } }
 
       it 'returns status code 422' do
         expect(response).to have_http_status(422)
@@ -77,11 +76,11 @@ RSpec.describe 'Notes API', type: :request do
         before { put "/notes/#{note_id}", params: valid_params }
 
         it 'updates the note' do
-          expect(response.body).to be_empty
+          expect(JSON.parse(response.body)['title']).to eq(valid_params[:note][:title])
         end
 
-        it 'returns status code 204' do
-          expect(response).to have_http_status(204)
+        it 'returns status code 200' do
+          expect(response).to have_http_status(200)
         end
       end
     end
